@@ -50,8 +50,7 @@ train_glm = h2o.glm(x = x_vars,
                     training_frame = train_dt_h2o)
 
 
-param_list = list(alpha = c(1),
-                  lambda = seq(0, 0.15, 0.01))
+param_list = list(lambda = seq(0, 0.15, 0.01))
 
 train_grid = h2o.grid(algorithm = 'glm',
                       x = x_vars,
@@ -63,76 +62,14 @@ train_grid = h2o.grid(algorithm = 'glm',
                       remove_collinear_columns = FALSE,
                       lambda_search = FALSE,
                       hyper_params = param_list,
+                      alpha = 1,
                       nfolds = 10,
                       training_frame = train_dt_h2o)
 
 
-extract_kfold_measures_h2o_grid = function(h2o_grid_object){
-  fold_result_list = list()
-  model_ids = h2o_grid_object@model_ids
-  hyper_params = h2o_grid_object@hyper_names
-  for (i in 1:length(model_ids)){
-    tt = h2o.getModel(h2o_grid_object@model_ids[[1]])
-    tf = tt@model$cross_validation_metrics_summary %>% 
-      as.data.frame() %>%
-      tidyr::gather('iteration', 'value')
-    
-    tf$metric = rep(row.names(tt@model$cross_validation_metrics_summary), tt@parameters$nfolds + 2)
-    
-    
-    
-  }
-    
-  
-    
-    
-  
-  
-}
 
+best_params = best_h2o_grid_params(h2o_grid_object = train_grid, use_metric = 'mean_residual_deviance', metric_optimum = 'min')
 
-
-hp = train_grid@hyper_names
-
-tt@parameters[hp]
-
-
-tt = h2o.getModel(train_grid@model_ids[[1]])
-
-tf = tt@model$cross_validation_metrics_summary %>% 
-  as.data.frame() %>%
-  tidyr::gather('iteration', 'value')
-
-tf$metric = rep(row.names(tt@model$cross_validation_metrics_summary), tt@parameters$nfolds + 2)
-
-
-
-tf 
-
-
-tf$metric = row.names(tf)
-tf = tf[, c('metric', colnames(tf)[colnames(tf) != 'metric'])] %>% tidyr::gather('metric', 'value')
-
-
-
-
-
-mini_iris <-
-  iris %>%
-  group_by(Species) %>%
-  slice(1)
-mini_iris %>% gather(key = "flower_att", value = "measurement", -Species)
-
-
-
-### To Do
-######################################################################################################
-#
-
-
-add_rownames(mtcars) %>% 
-  gather(var, value, -rowname) %>% 
-  spread(rowname, value) 
-
+grid_results = extract_kfold_measures_h2o_grid(h2o_grid_object = train_grid)
 
 

@@ -1,5 +1,7 @@
-### Define Functions
+### Define Functions Related to Data Processing
 ######################################################################################################
+
+
 
 #' Assert numeric and factor column types for vectors
 #' of continuous and categorical variables, respectively,
@@ -22,3 +24,5 @@ dtable_define_variable_classes = function(dtable, categ_vars, cont_vars){
 
 
 
+#' Opposite of %in%
+'%!in%' <- function(x,y)!('%in%'(x,y))
