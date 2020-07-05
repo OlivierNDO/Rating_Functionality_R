@@ -12,13 +12,13 @@ config_fp_proc_data_dir = 'D:/processed_insurance_data/'
 ### Packages (config_pkg...)
 ######################################################################################################
 # Load Required Packages
-config_pkg_req_list = c('data.table', 'h2o', 'tidyverse')
+config_pkg_req_list = c('assertthat', 'data.table', 'h2o', 'tidyverse')
 lapply(config_pkg_req_list, require, character.only = TRUE)
 
 
 ### Modukes (config_module...)
 ######################################################################################################
-config_module_list = c('src/processing_functions.R')
+config_module_list = paste('src/', list.files('src/'), sep = '')
 sapply(config_module_list, source, .GlobalEnv)
 
 

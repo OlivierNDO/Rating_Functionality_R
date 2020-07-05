@@ -20,6 +20,7 @@ h2o.init()
 id_vars = 'id'
 categ_vars = colnames(train_dt)[colnames(train_dt) %like% 'cat']
 cont_vars = colnames(train_dt)[colnames(train_dt) %like% 'cont']
+all_x_vars = c(categ_vars, cont_vars)
 
 # Dummy Earned Exposures & Pure Premium
 train_dt$earned_exposure = sample(x = c(seq(1,12)/12, rep(1,5)), size = nrow(train_dt), replace = TRUE)
@@ -36,40 +37,29 @@ dtable_define_variable_classes(dtable = train_dt, categ_vars = categ_vars, cont_
 train_dt_h2o = as.h2o(train_dt[, c('pure_premium', 'earned_exposure', c(cont_vars[1:2], categ_vars[1:2])), with = FALSE])
 
 
-### Define Columns, Create Dummy Earned Exposure & Pure Premium Fields
+### Generate Single-Variable Importance
 ######################################################################################################
-x_vars = c(cont_vars[1:2], categ_vars[1:2])
-train_glm = h2o.glm(x = x_vars,
-                    y = 'pure_premium',
-                    weights_column = 'earned_exposure',
-                    family = 'tweedie',
-                    tweedie_link_power = 1,
-                    tweedie_variance_power = 1.5,
-                    remove_collinear_columns = FALSE,
-                    lambda_search = FALSE,
-                    training_frame = train_dt_h2o)
+# Table
+single_var_importance = tweedie_glm_h2o_rank_order_importance(dtable = train_dt,
+                                                              x_cols = all_x_vars,
+                                                              y_col = 'pure_premium',
+                                                              n_folds = 10, 
+                                                              use_metric = 'mean_residual_deviance',
+                                                              weight_col = 'earned_exposure')
+
+# Plot
+single_var_importance_plot = plot_tweedie_glm_h2o_rank_order_importance(output_dframe = single_var_importance)
 
 
-param_list = list(lambda = seq(0, 0.15, 0.01))
+### Iteratively Add Variables Contingent on K-Fold Improvements, Starting with Most Important
+######################################################################################################
 
-train_grid = h2o.grid(algorithm = 'glm',
-                      x = x_vars,
-                      y = 'pure_premium',
-                      weights_column = 'earned_exposure',
-                      family = 'tweedie',
-                      tweedie_link_power = 1,
-                      tweedie_variance_power = 1.5,
-                      remove_collinear_columns = FALSE,
-                      lambda_search = FALSE,
-                      hyper_params = param_list,
-                      alpha = 1,
-                      nfolds = 10,
-                      training_frame = train_dt_h2o)
-
-
-
-best_params = best_h2o_grid_params(h2o_grid_object = train_grid, use_metric = 'mean_residual_deviance', metric_optimum = 'min')
-
-grid_results = extract_kfold_measures_h2o_grid(h2o_grid_object = train_grid)
-
+# Best Features Based on Unsupervised Additive Stepwise Procedure
+unsupervised_best_features = tweedie_glm_h2o_iterative_feature_selection(dtable = train_dt,
+                                                                         x_cols = all_x_vars,
+                                                                         y_col = 'pure_premium',
+                                                                         n_folds = 10, 
+                                                                         min_improvement_percent = 0.001,
+                                                                         use_metric = 'mean_residual_deviance',
+                                                                         weight_col = 'earned_exposure')
 

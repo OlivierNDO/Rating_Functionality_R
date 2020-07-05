@@ -26,3 +26,16 @@ dtable_define_variable_classes = function(dtable, categ_vars, cont_vars){
 
 #' Opposite of %in%
 '%!in%' <- function(x,y)!('%in%'(x,y))
+
+
+
+#' Convert numeric to formatted character string showing percentage
+#' @param decimal_value numeric value
+#' @param round_precision number of decimal places to round after multiplying by 100
+#' @example decimal_to_perc_label(0.0032423, round_precision = 2)
+#' @returns "0.32%"
+decimal_to_perc_label = function(decimal_value, round_precision = 2){
+  return (paste0(round(decimal_value * 100, round_precision), '%'))
+}
+
+
