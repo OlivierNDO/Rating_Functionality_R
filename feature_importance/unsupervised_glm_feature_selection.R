@@ -121,6 +121,30 @@ train_grid_best_params = best_h2o_grid_params(train_grid)
 write.csv(train_grid_summary, config_save_name_alpha_lambda_grid, row.names = FALSE)
 
 
+### Tune Tweedie Variance Power with Selected Lambda, Alpha, and Features
+######################################################################################################
+
+# Tune Tweedie Power
+tweed_grid = h2o.grid(algorithm = 'glm',
+                      x = recommended_features$`Recommended Feature`,
+                      y = 'pure_premium',
+                      weights_column = 'earned_exposure',
+                      family = 'tweedie',
+                      tweedie_link_power = 1,
+                      remove_collinear_columns = FALSE,
+                      lambda_search = FALSE,
+                      alpha = train_grid_best_params$alpha,
+                      lambda = train_grid_best_params$lambda,
+                      hyper_params = config_hparam_tweedie_list,
+                      nfolds = 10,
+                      training_frame = as.h2o(train_dt[, c('pure_premium', recommended_features$`Recommended Feature`, 'earned_exposure'), with = FALSE]))
+
+# Extract Best Parameters, Save Results
+tweed_grid_summary = extract_kfold_measures_h2o_grid(tweed_grid)
+tweed_grid_best_params = best_h2o_grid_params(tweed_grid, use_metric = 'mse')
+write.csv(tweed_grid_summary, config_save_name_tweedie_grid, row.names = FALSE)
+
+
 ### Fit Final Model & Predict on Test Set
 ######################################################################################################
 
@@ -130,7 +154,7 @@ fit_glm = h2o.glm(x = recommended_features$`Recommended Feature`,
                   weights_column = 'earned_exposure',
                   family = 'tweedie',
                   tweedie_link_power = 1,
-                  tweedie_variance_power = 1.5,
+                  tweedie_variance_power = tweed_grid_best_params$tweedie_variance_power,
                   remove_collinear_columns = FALSE,
                   lambda_search = FALSE,
                   alpha = train_grid_best_params$alpha,
