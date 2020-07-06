@@ -36,6 +36,7 @@ config_save_name_recommended_features = 'feature_importance/feature_importance_o
 config_save_name_alpha_lambda_grid = 'feature_importance/feature_importance_output/alpha_lambda_grid_search.csv'
 config_save_name_tweedie_grid = 'feature_importance/feature_importance_output/tweedie_grid_search.csv'
 config_save_name_glm_test_pred = paste0(config_fp_proc_data_dir, 'glm_prediction_output.csv')
+config_save_name_glm_model = 'D:/model_save/glm/'
 
 ### Hyperparameters to Tune (config_hparam...)
 ######################################################################################################

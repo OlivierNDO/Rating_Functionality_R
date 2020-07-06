@@ -166,16 +166,6 @@ test_pred = test_dt[, 'id'] %>% as.data.frame()
 test_pred$loss = as.data.frame(h2o.predict(fit_glm, as.h2o(test_dt)))$predict
 write.csv(test_pred, config_save_name_glm_test_pred, row.names = FALSE)
 
-
-
-
-
-
-
-
-
-
-
-
-
+# Save Model Object
+h2o.saveModel(fit_glm, config_save_name_glm_model)
 
