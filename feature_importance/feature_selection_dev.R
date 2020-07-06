@@ -32,11 +32,6 @@ train_dt[, pure_premium := loss / earned_exposure]
 dtable_define_variable_classes(dtable = train_dt, categ_vars = categ_vars, cont_vars = cont_vars)
 
 
-### Create H2O Frames
-######################################################################################################
-train_dt_h2o = as.h2o(train_dt[, c('pure_premium', 'earned_exposure', c(cont_vars[1:2], categ_vars[1:2])), with = FALSE])
-
-
 ### Generate Single-Variable Importance
 ######################################################################################################
 # Table
@@ -62,4 +57,29 @@ unsupervised_best_features = tweedie_glm_h2o_iterative_feature_selection(dtable 
                                                                          min_improvement_percent = 0.001,
                                                                          use_metric = 'mean_residual_deviance',
                                                                          weight_col = 'earned_exposure')
+
+
+### Perform Leave-One-Feature Out Variable Importance - Limited to Selected Features Above
+######################################################################################################
+
+# LOFO Feature Importance
+lofo_importance = tweedie_glm_h2o_kfold_lofo(dtable = train_dt,
+                                             x_cols = unsupervised_best_features,
+                                             y_col = 'pure_premium',
+                                             n_folds = 10,
+                                             use_metric = 'mean_residual_deviance',
+                                             weight_col = 'earned_exposure')
+
+
+
+
+
+
+
+
+
+
+
+
+
 

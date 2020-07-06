@@ -283,19 +283,23 @@ tweedie_glm_h2o_iterative_feature_selection = function(dtable, x_cols, y_col, n_
     
     # Remove Added Variable if Results Are Not Improved
     improvement_bool = ifelse(optim_type == 'min',
-                              grid_result_i < min(grid_result_list),
-                              grid_result_i > max(grid_result_list))
+                              grid_result_i < min(grid_result_list, na.rm = TRUE),
+                              grid_result_i > max(grid_result_list, na.rm = TRUE))
     
     # Calculate % Improvement
     improvement_perc = ifelse(optim_type == 'min',
-                              (min(grid_result_list) - grid_result_i) / min(grid_result_list),
-                              (max(grid_result_list) - grid_result_i) / max(grid_result_list))
+                              (min(grid_result_list, na.rm = TRUE) - grid_result_i) / min(grid_result_list, na.rm = TRUE),
+                              (max(grid_result_list, na.rm = TRUE) - grid_result_i) / max(grid_result_list, na.rm = TRUE))
     
     improvement_label = decimal_to_perc_label(decimal_value = improvement_perc, round_precision = 4)
     improvement_threshold = decimal_to_perc_label(decimal_value = min_improvement_percent, round_precision = 4)
     
     # Print Timestamp Message with Decision on Variable
-    if (improvement_bool == FALSE){
+    if (is.na(improvement_bool)){
+      use_x_vars = use_x_vars[use_x_vars != add_x_var]
+      print(paste0(Sys.time(), ' ', add_x_var, ' resulted in NA value for improvement calculation.',
+                   ' Not adding to the list of x variables.'))
+    } else if (improvement_bool == FALSE){
       use_x_vars = use_x_vars[use_x_vars != add_x_var]
       print(paste0(Sys.time(), ' ', add_x_var, ' did not improve ', use_metric,
                    ' over ', n_folds, ' folds. Not adding to the list of x variables.'))
@@ -321,4 +325,105 @@ tweedie_glm_h2o_iterative_feature_selection = function(dtable, x_cols, y_col, n_
   return (use_x_vars)
 }
 
+
+
+#' Measures K-fold leave-one-out feature importance given a data.table and vector of features.
+#' e.g. given feature set {x1, x2}, calculate change in error metric from removing x1, then removing x2
+#' The worse an error metric becomes due to removing a variable, the more important it is.
+#' @param dtable data.table object
+#' @param x_cols vector of character strings representing X column names
+#' @param y_col character string representing dependent variable column name
+#' @param n_folds no. of k-fold splits to use in cross validation
+#' @param use_metric character string representing grid search metric to use in evaluation of variables - defaults to 'mean_residual_deviance'
+#'                   accepted values: 'mae', 'mean_residual_deviance', 'mse', 'residual_deviance', 'rmse', 'rmsle'
+#' @param use_mean_median whether to return k-fold results based on mean or median out of sample value - defaults to 'mean' - accepts values {'mean' | 'median'}
+#' @param weight_col weight column in GLM fit - defaults to NULL
+#' @param tweedie_link_power tweedie link power - defaults to 1
+#' @param tweedie_variance_power tweedie variance power - defaults to 1.5
+#' @param remove_collinear_columns boolean - in case of linearly dependent columns, remove some of the dependent columns - defaults to FALSE
+#' @param intercept boolean - fit intercept in GLM model - defaults to TRUE
+#' @param random_seed value to use in set.seed() call - defaults to 7052020
+tweedie_glm_h2o_kfold_lofo = function(dtable, x_cols, y_col, n_folds = 10,
+                                      use_metric = 'mean_residual_deviance',
+                                      use_mean_median = 'mean',
+                                      weight_col = NULL, offset_col = NULL,
+                                      tweedie_link_power = 1, tweedie_variance_power = 1.5,
+                                      remove_collinear_columns = FALSE, intercept = TRUE, random_seed = 7052020){
+  set.seed(random_seed)
+  # Assertion Statements
+  accepted_use_metric_values = c('mae', 'mean_residual_deviance', 'mse','residual_deviance', 'rmse', 'rmsle')
+  assertthat::assert_that(use_metric %in% accepted_use_metric_values)
+  
+  # Calculate Error Metric for All Fields
+  train_grid_all = h2o.grid(algorithm = 'glm',
+                            x = x_cols,
+                            y = y_col,
+                            weights_column = weight_col,
+                            family = 'tweedie',
+                            tweedie_link_power = tweedie_link_power,
+                            tweedie_variance_power = tweedie_variance_power,
+                            remove_collinear_columns = remove_collinear_columns,
+                            lambda_search = FALSE,
+                            hyper_params = list(),
+                            alpha = 1,
+                            nfolds = n_folds,
+                            training_frame = as.h2o(dtable[, c(y_col, x_cols, weight_col, offset_col), with = FALSE]))
+  
+  # Extract Results
+  if (use_mean_median == 'mean'){
+    grid_result_init = extract_kfold_measures_h2o_grid(h2o_grid_object = train_grid_all)
+    grid_result_all = grid_result_init[grid_result_init$metric == use_metric, 'value'] %>% mean()
+  } else {
+    grid_result_init = extract_kfold_measures_h2o_grid(h2o_grid_object = train_grid_all)
+    grid_result_all = grid_result_init[grid_result_init$metric == use_metric, 'value'] %>% median()
+  }
+  
+  # Iteratively Remove Variables, Calculate K-Fold Results
+  grid_result_list = c()
+  var_removed_list = c()
+  
+  for (i in 1:length(x_cols)){
+    remove_x = x_cols[i]
+    use_x_vars = x_cols[x_cols != remove_x]
+    train_grid_i = h2o.grid(algorithm = 'glm',
+                            x = use_x_vars,
+                            y = y_col,
+                            weights_column = weight_col,
+                            family = 'tweedie',
+                            tweedie_link_power = tweedie_link_power,
+                            tweedie_variance_power = tweedie_variance_power,
+                            remove_collinear_columns = remove_collinear_columns,
+                            lambda_search = FALSE,
+                            hyper_params = list(),
+                            alpha = 1,
+                            nfolds = n_folds,
+                            training_frame = as.h2o(dtable[, c(y_col, use_x_vars, weight_col, offset_col), with = FALSE]))
+    
+    # Extract Results
+    if (use_mean_median == 'mean'){
+      grid_result_init = extract_kfold_measures_h2o_grid(h2o_grid_object = train_grid_i)
+      grid_result_i = grid_result_init[grid_result_init$metric == use_metric, 'value'] %>% mean()
+    } else {
+      grid_result_init = extract_kfold_measures_h2o_grid(h2o_grid_object = train_grid_i)
+      grid_result_i = grid_result_init[grid_result_init$metric == use_metric, 'value'] %>% median()
+    }
+    
+    # Append to Lists
+    grid_result_list = c(grid_result_list, grid_result_i)
+    var_removed_list = c(var_removed_list, remove_x)
+    print(paste0(Sys.time(), ' Completed ', n_folds, '-fold CV after removing ', remove_x))
+  }
+  
+  # Aggregate Results
+  agg_df = data.frame(variable_removed = var_removed_list,
+                      value = grid_result_list)  %>%
+    dplyr::mutate(metric_used = use_metric, k_folds = n_folds, value_type = use_mean_median) %>%
+    dplyr::mutate(value_delta = value - grid_result_all) %>%
+    dplyr::mutate(value_percent_delta = value_delta / grid_result_all) %>%
+    dplyr::mutate(value_percent_delta_label = decimal_to_perc_label(value_percent_delta, 5)) %>%
+    dplyr::mutate(variable_inclusion = ifelse(value_delta > 0, 'Improves Performance', 'Worsens Performance'))
+  
+  
+  return (agg_df)
+}
 
