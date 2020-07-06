@@ -39,3 +39,19 @@ decimal_to_perc_label = function(decimal_value, round_precision = 2){
 }
 
 
+
+#' Convert a sngle word to camel case
+#' @param word_str character string representing a single word
+camel_case = function(word_str){
+  first_letter = toupper(stringr::str_sub(word_str, 1, 1))
+  other_letters = tolower(stringr::str_sub(word_str, 2, nchar(word_str)))
+  return (paste0(first_letter, other_letters))
+}
+
+#' Convert a sentence to camel case
+#' @param sentence_str character string to be converted
+#' @param delimiter substring 
+camel_case_sentence = function(sentence_str, delimiter = ' '){
+  split_char_str = strsplit(sentence_str, ' ') %>% unlist()
+  return (paste(sapply(split_char_str, camel_case), collapse = delimiter))
+}

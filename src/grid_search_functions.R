@@ -421,9 +421,33 @@ tweedie_glm_h2o_kfold_lofo = function(dtable, x_cols, y_col, n_folds = 10,
     dplyr::mutate(value_delta = value - grid_result_all) %>%
     dplyr::mutate(value_percent_delta = value_delta / grid_result_all) %>%
     dplyr::mutate(value_percent_delta_label = decimal_to_perc_label(value_percent_delta, 5)) %>%
-    dplyr::mutate(variable_inclusion = ifelse(value_delta > 0, 'Improves Performance', 'Worsens Performance'))
+    dplyr::mutate(variable_inclusion = factor(ifelse(value_delta > 0, 'Improves Performance', 'Worsens Performance'),
+                                              levels = c('Improves Performance', 'Worsens Performance')))
   
   
   return (agg_df)
 }
 
+
+
+#' Create ggplot2 object displaying output of tweedie_glm_h2o_kfold_lofo() function
+#' @param output_dframe data.frame object returned from tweedie_glm_h2o_kfold_lofo() function
+plot_tweedie_glm_h2o_kfold_lofo = function(output_dframe){
+  g = ggplot(output_dframe, aes(x = reorder(variable_removed, value_percent_delta), y = value_percent_delta,
+                                fill = variable_inclusion, color = variable_inclusion)) +
+    theme_bw() +
+    scale_color_manual(values = c('forestgreen', 'darkred')) +
+    scale_fill_manual(values = c('forestgreen', 'darkred')) +
+    geom_col(alpha = 0.25) +
+    theme(legend.position = 'bottom',
+          plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          plot.caption = element_text(hjust = 0.5)) +
+    coord_flip() +
+    labs(fill = 'Impact of Including Variable',
+         color = 'Impact of Including Variable',
+         y = paste0('% Change in ', camel_case_sentence(gsub('_', ' ', unique(output_dframe$metric_used)))),
+         x = 'Feature',
+         title = 'Leave-One Feature Out (LOFO) Importance')
+  return (g)
+}

@@ -71,15 +71,5 @@ lofo_importance = tweedie_glm_h2o_kfold_lofo(dtable = train_dt,
                                              weight_col = 'earned_exposure')
 
 
-
-
-
-
-
-
-
-
-
-
-
+lofo_importance_plot = plot_tweedie_glm_h2o_kfold_lofo(lofo_importance)
 
