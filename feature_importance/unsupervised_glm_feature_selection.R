@@ -70,6 +70,22 @@ lofo_importance = tweedie_glm_h2o_kfold_lofo(dtable = train_dt,
                                              use_metric = 'mean_residual_deviance',
                                              weight_col = 'earned_exposure')
 
-
+# Plot
 lofo_importance_plot = plot_tweedie_glm_h2o_kfold_lofo(lofo_importance)
+
+
+
+### Final Recommended Features for Inclusion
+######################################################################################################
+recommended_features = lofo_importance %>%
+  dplyr::filter(value_percent_delta > 0) %>%
+  dplyr::filter(!is.na(variable_removed) & variable_removed != 'NA') %>%
+  dplyr::select(variable_removed, value_percent_delta) %>%
+  dplyr::arrange(desc(value_percent_delta)) %>%
+  dplyr::rename(`Relative Importance` = value_percent_delta,
+                `Recommended Feature` = variable_removed)
+
+
+recommended_features = lofo_importance[lofo_importance$value_percent_delta > 0 &
+                                         !is.na(lofo_importance$variable_removed), 'variable_removed']
 
