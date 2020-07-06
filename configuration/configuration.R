@@ -26,3 +26,15 @@ sapply(config_module_list, source, .GlobalEnv)
 ######################################################################################################
 options(scipen = 999)
 config_random_seed = 7022020
+
+
+### File Save Names (config_save_name...)
+######################################################################################################
+config_save_name_lofo_plot = 'feature_importance/feature_importance_output/lofo_feature_importance.png'
+config_save_name_single_varimp_plot = 'feature_importance/feature_importance_output/single_var_importance.png'
+config_save_name_recommended_features = 'feature_importance/feature_importance_output/recommended_features.csv'
+
+
+
+
+

@@ -172,12 +172,16 @@ tweedie_glm_h2o_rank_order_importance = function(dtable, x_cols, y_col, n_folds 
 #' @param column_fill_color color used for fill and outline of geom_col()
 #' @param strip_fill_color color used for fill in strip.background theme
 #' @param strip_text_color color used in strip.text theme
+#' @param plot_top_n if not NULL, number of most important variables to plot
 #' @param round_txt_label_precision no. decimal points to round geom_text label
+#' @param save_location file path and name to save resulting plot - defaults to NULL
 plot_tweedie_glm_h2o_rank_order_importance = function(output_dframe,
                                                       column_fill_color = rgb(2, 52, 151, maxColorValue = 255),
                                                       strip_fill = rgb(55, 153, 245, maxColorValue = 255),
                                                       strip_text_color = 'white',
-                                                      round_txt_label_precision = 3){
+                                                      plot_top_n = NULL,
+                                                      round_txt_label_precision = 3,
+                                                      save_location = NULL){
   
   
   # K-Fold Result Descriptive Values
@@ -187,11 +191,37 @@ plot_tweedie_glm_h2o_rank_order_importance = function(output_dframe,
   
   # Create ggplot Object, Sorting Contingent on Metric Optimization
   if (optim_type == 'min'){
-    g = ggplot(output_dframe, aes(x = reorder(x_variable, desc(value)), y = value))
+    
+    if (!is.null(plot_top_n)){
+      output_dframe_head = output_dframe %>%
+        dplyr::arrange(desc(value)) %>%
+        head(plot_top_n)
+      g = ggplot(output_dframe_head, aes(x = reorder(x_variable, desc(value)), y = value))
+    } else {
+      g = ggplot(output_dframe, aes(x = reorder(x_variable, desc(value)), y = value))
+    }
+    
     subtitle_txt = '(lower is better)' 
+    
   } else {
-    g = ggplot(output_dframe, aes(x = reorder(x_variable, value), y = value))
+    
+    if (!is.null(plot_top_n)){
+      output_dframe_head = output_dframe %>%
+        dplyr::arrange(value) %>%
+        head(plot_top_n)
+      g = ggplot(output_dframe_head, aes(x = reorder(x_variable, value), y = value))
+    } else {
+      g = ggplot(output_dframe, aes(x = reorder(x_variable, value), y = value))
+    }
+    
     subtitle_txt = '(higher is better)'
+  }
+  
+  # Caption Text
+  if (!is.null(plot_top_n)){
+    caption_txt = paste0('Top ', plot_top_n, ' variables by importance shown')
+  } else {
+    caption_txt = ''
   }
   
   # Create and Return Plot
@@ -200,9 +230,10 @@ plot_tweedie_glm_h2o_rank_order_importance = function(output_dframe,
     facet_wrap(~value_type) +
     geom_col(alpha = 0.25, color = column_fill_color, fill = column_fill_color) +
     labs(title = paste0('Single-Predictor ', nfolds_fit, '-Fold Results'),
-         x = 'variable',
-         y = gsub('_', ' ', metric_used),
-         subtitle = subtitle_txt) +
+         x = 'Variable',
+         y = camel_case_sentence(gsub('_', ' ', metric_used)),
+         subtitle = subtitle_txt,
+         caption = caption_txt) +
     theme(plot.title = element_text(hjust = 0.5),
           plot.subtitle = element_text(hjust = 0.5),
           plot.caption = element_text(hjust = 0.5),
@@ -211,6 +242,12 @@ plot_tweedie_glm_h2o_rank_order_importance = function(output_dframe,
     geom_text(aes(label = round(value, round_txt_label_precision), y = value * 1.04),
               color = column_fill_color) +
     coord_flip()
+  
+  # Save Location - If Applicable
+  if (!is.null(save_location)){
+    ggsave(save_location, g_output)
+    print(paste0(Sys.time(), ' plot saved to file: ', save_location))
+  }
   
   return (g_output)
 }
@@ -432,7 +469,9 @@ tweedie_glm_h2o_kfold_lofo = function(dtable, x_cols, y_col, n_folds = 10,
 
 #' Create ggplot2 object displaying output of tweedie_glm_h2o_kfold_lofo() function
 #' @param output_dframe data.frame object returned from tweedie_glm_h2o_kfold_lofo() function
-plot_tweedie_glm_h2o_kfold_lofo = function(output_dframe){
+#' @param save_location file path and name to save resulting plot - defaults to NULL
+plot_tweedie_glm_h2o_kfold_lofo = function(output_dframe, save_location = NULL){
+  # Create Plot
   g = ggplot(output_dframe, aes(x = reorder(variable_removed, value_percent_delta), y = value_percent_delta,
                                 fill = variable_inclusion, color = variable_inclusion)) +
     theme_bw() +
@@ -449,5 +488,12 @@ plot_tweedie_glm_h2o_kfold_lofo = function(output_dframe){
          y = paste0('% Change in ', camel_case_sentence(gsub('_', ' ', unique(output_dframe$metric_used)))),
          x = 'Feature',
          title = 'Leave-One Feature Out (LOFO) Importance')
+  
+  # Save Location - If Applicable
+  if (!is.null(save_location)){
+    ggsave(save_location, g)
+    print(paste0(Sys.time(), ' plot saved to file: ', save_location))
+  }
+  
   return (g)
 }

@@ -43,7 +43,9 @@ single_var_importance = tweedie_glm_h2o_rank_order_importance(dtable = train_dt,
                                                               weight_col = 'earned_exposure')
 
 # Plot
-single_var_importance_plot = plot_tweedie_glm_h2o_rank_order_importance(output_dframe = single_var_importance)
+single_var_importance_plot = plot_tweedie_glm_h2o_rank_order_importance(output_dframe = single_var_importance,
+                                                                        plot_top_n = 20,
+                                                                        save_location = config_save_name_single_varimp_plot)
 
 
 ### Iteratively Add Variables Contingent on K-Fold Improvements, Starting with Most Important
@@ -71,12 +73,13 @@ lofo_importance = tweedie_glm_h2o_kfold_lofo(dtable = train_dt,
                                              weight_col = 'earned_exposure')
 
 # Plot
-lofo_importance_plot = plot_tweedie_glm_h2o_kfold_lofo(lofo_importance)
+lofo_importance_plot = plot_tweedie_glm_h2o_kfold_lofo(lofo_importance, save_location = config_save_name_lofo_plot)
 
 
 
 ### Final Recommended Features for Inclusion
 ######################################################################################################
+# Subset Recommended Features
 recommended_features = lofo_importance %>%
   dplyr::filter(value_percent_delta > 0) %>%
   dplyr::filter(!is.na(variable_removed) & variable_removed != 'NA') %>%
@@ -85,7 +88,5 @@ recommended_features = lofo_importance %>%
   dplyr::rename(`Relative Importance` = value_percent_delta,
                 `Recommended Feature` = variable_removed)
 
-
-recommended_features = lofo_importance[lofo_importance$value_percent_delta > 0 &
-                                         !is.na(lofo_importance$variable_removed), 'variable_removed']
-
+# Save Output to Csv File
+write.csv(recommended_features, config_save_name_recommended_features, row.names = FALSE)
