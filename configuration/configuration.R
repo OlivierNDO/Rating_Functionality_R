@@ -33,8 +33,12 @@ config_random_seed = 7022020
 config_save_name_lofo_plot = 'feature_importance/feature_importance_output/lofo_feature_importance.png'
 config_save_name_single_varimp_plot = 'feature_importance/feature_importance_output/single_var_importance.png'
 config_save_name_recommended_features = 'feature_importance/feature_importance_output/recommended_features.csv'
+config_save_name_alpha_lambda_grid = 'feature_importance/feature_importance_output/alpha_lambda_grid_search.csv'
+config_save_name_glm_test_pred = paste0(config_fp_proc_data_dir, 'glm_prediction_output.csv')
 
-
-
+### Hyperparameters to Tune (config_hparam...)
+######################################################################################################
+config_hparam_alpha_lambda_list = list(lambda = c(0, 0.00001, 0.00005, 0.0001, 0.0005, 0.001),
+                                       alpha = seq(0, 1, 0.1))
 
 
