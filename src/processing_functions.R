@@ -73,3 +73,39 @@ create_exponential_terms = function(dtable, x_cols, power = 2, suffix = '_square
     return (new_variables)
   }
 }
+
+
+
+
+#' Create log versions of existing data.table columns,
+#' returning a vector of newly created column names if configured.
+#' NA and infinite values are changed to 1 before taking log.
+#' All other values are transformed as log(x + 1)
+#' @param dtable data.table object
+#' @param x_cols vector of existing column names to be squared, cubed, etc.
+#' @param power power to raise existing variables to
+#' @param suffix character string to be appended on to existing column names
+#' @param return_cols boolean indicating whether to return vector of newly created columns
+create_log_transformed_terms = function(dtable, x_cols, suffix = '_log', return_cols = TRUE){
+  new_variables = c()
+  for (i in 1:length(x_cols)){
+    new_col = paste0(x_cols[i], suffix)
+    dtable[, (new_col) := ifelse(is.na(get(x_cols[i])) | is.infinite(get(x_cols[i])), log(1), log(get(x_cols[i]) + 1))]
+    print(paste0(Sys.time(), ' created variable ', new_col, ' from ', x_cols[i]))
+    new_variables = c(new_variables,  new_col)
+  }
+  if (return_cols == TRUE){
+    return (new_variables)
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
