@@ -497,3 +497,59 @@ plot_tweedie_glm_h2o_kfold_lofo = function(output_dframe, save_location = NULL){
   
   return (g)
 }
+
+
+
+#' Iterate over a sample of hyperparameter space with xgboost.cv, using a predefined
+#' validation set for early stopping. Return a data.frame object with the hyperparameters
+#' and average test set evaluation metric over k folds.
+#' @param train_matrix training set xgb.DMatrix object
+#' @param valid_matrix validation set xgb.DMatrix object
+#' @param hyper_param_list list of hyperparameters. Must include (and is limited to):
+#' colsample_bytree, learn_rate, gamma, max_depth, min_child_weight, reg_alpha, reg_lambda, and subsample
+#' @param n_models no. of unique hyperparameter combinations to try in grid search.
+#' this will be used to sample all possible hyperparameter combinations
+#' @param k integer, number of folds to use in grid search - defaults to 10
+#' @param nrounds number of rounds to use xgboost fitting - defaults to 5000
+#' @param stopping_rounds number of rounds after which the validation
+#'  performance has stopped improving to stop training - defaults to 20
+#' @param eval_metric metric used in xgboost evaluation and for early stopping - defaults to 'rmse'
+#' @param maximize_eval_metric boolean indicating whether loss function is maximizing or minimizing
+#' @param random_seed integer used in set.seed() call before sampling hyperparameter space
+#' @return data.frame object hyperparameters and average test set evaluation metric over k folds.
+xgb_early_stop_grid_search = function(train_matrix, valid_matrix, hyper_param_list, n_models,
+                                      k = 10, nrounds = 5000, stopping_rounds = 20,
+                                      eval_metric = 'rmse', maximize_eval_metric = FALSE, random_seed = 7072020){
+  
+  # Sample Hyperparameter Space
+  set.seed(random_seed)
+  param_grid_df = expand.grid(hyper_param_list)
+  sample_rows = sample(1:nrow(param_grid_df), n_models)
+  sample_grid_df = param_grid_df[sample_rows,]
+  sample_grid_df[, paste0('test_set_', eval_metric)] = numeric()
+  
+  # Loop Over Sampled Hyperparameters
+  for (i in 1:nrow(sample_grid_df)){
+    print(paste0(Sys.time(), ' starting ', k, '-fold search on hyperparameter set ', i, ' of ', nrow(sample_grid_df)))
+    
+    fit_xgb = xgb.cv(data = train_matrix,
+                     watchlist = list(train = train_matrix,validate = train_matrix),
+                     nfold = k,
+                     eval_metric = eval_metric,
+                     maximize = maximize_eval_metric,
+                     nrounds = nrounds,
+                     early_stopping_rounds = stopping_rounds,
+                     stopping_metric = eval_metric,
+                     colsample_bytree = sample_grid_df[i, 'colsample_bytree'],
+                     learn_rate = sample_grid_df[i, 'learn_rate'],
+                     gamma = sample_grid_df[i, 'gamma'],
+                     max_depth = sample_grid_df[i, 'max_depth'],
+                     min_child_weight = sample_grid_df[i, 'min_child_weight'],
+                     reg_alpha = sample_grid_df[i, 'reg_alpha'],
+                     reg_lambda = sample_grid_df[i, 'reg_lambda'],
+                     subsample = sample_grid_df[i, 'subsample'],
+                     verbose = TRUE)
+    sample_grid_df[i, paste0('test_set_', eval_metric)] = fit_xgb$evaluation_log[, paste0('test_', eval_metric, '_mean')] %>% min()
+  }
+  return (sample_grid_df)
+}
