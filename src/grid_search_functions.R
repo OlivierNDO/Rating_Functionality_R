@@ -549,7 +549,9 @@ xgb_early_stop_grid_search = function(train_matrix, valid_matrix, hyper_param_li
                      reg_lambda = sample_grid_df[i, 'reg_lambda'],
                      subsample = sample_grid_df[i, 'subsample'],
                      verbose = TRUE)
+    
     sample_grid_df[i, paste0('test_set_', eval_metric)] = fit_xgb$evaluation_log[, paste0('test_', eval_metric, '_mean')] %>% min()
+    rm(fit_xgb)
   }
   return (sample_grid_df)
 }
