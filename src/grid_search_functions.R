@@ -527,7 +527,8 @@ xgb_early_stop_grid_search = function(train_matrix, valid_matrix, hyper_param_li
   param_grid_df = expand.grid(hyper_param_list)
   sample_rows = sample(1:nrow(param_grid_df), n_models)
   sample_grid_df = param_grid_df[sample_rows,]
-  sample_grid_df[, paste0('test_set_', eval_metric)] = numeric()
+  eval_col = paste0('test_', eval_metric, '_mean')
+  eval_metric_vector = c()
   
   # Loop Over Sampled Hyperparameters
   for (i in 1:nrow(sample_grid_df)){
@@ -551,8 +552,14 @@ xgb_early_stop_grid_search = function(train_matrix, valid_matrix, hyper_param_li
                      subsample = sample_grid_df[i, 'subsample'],
                      print_every_n = print_every)
     
-    sample_grid_df[i, paste0('test_set_', eval_metric)] = fit_xgb$evaluation_log[, paste0('test_', eval_metric, '_mean')] %>% min()
-    rm(fit_xgb)
+    eval_metric_vector = c(eval_metric_vector, min(data.frame(fit_xgb$evaluation_log)[, eval_col]))
+    rm(fit_xgb); gc_x = gc(); rm(gc_x)
   }
-  return (sample_grid_df)
+  sample_grid_df[, eval_col] = eval_metric_vector
+  
+  # Separate Best Parameters from Summary
+  best_error_metric = ifelse(maximize_eval_metric == FALSE, min(sample_grid_df[[eval_col]]), max(sample_grid_df[[eval_col]]))
+  best_params = sample_grid_df[sample_grid_df[[eval_col]] == best_error_metric,]
+  print(best_params)
+  return (list(sample_grid_df, best_params))
 }

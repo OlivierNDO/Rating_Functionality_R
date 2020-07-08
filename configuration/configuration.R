@@ -35,8 +35,11 @@ config_save_name_single_varimp_plot = 'feature_importance/feature_importance_out
 config_save_name_recommended_features = 'feature_importance/feature_importance_output/recommended_features.csv'
 config_save_name_alpha_lambda_grid = 'feature_importance/feature_importance_output/alpha_lambda_grid_search.csv'
 config_save_name_tweedie_grid = 'feature_importance/feature_importance_output/tweedie_grid_search.csv'
+config_save_name_xgb_grid = 'feature_importance/feature_importance_output/xgb_grid_search.csv'
 config_save_name_glm_test_pred = paste0(config_fp_proc_data_dir, 'glm_prediction_output.csv')
+config_save_name_xgb_test_pred = paste0(config_fp_proc_data_dir, 'xgb_prediction_output.csv')
 config_save_name_glm_model = 'D:/model_save/glm/'
+config_save_name_xgb_model = 'D:/model_save/xgb/xgb_model.rds'
 
 ### GLM Hyperparameters to Tune (config_hparam...)
 ######################################################################################################

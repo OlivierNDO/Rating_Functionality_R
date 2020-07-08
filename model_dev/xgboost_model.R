@@ -23,6 +23,7 @@ train_dt[, earned_exposure := 1]
 test_dt[, earned_exposure := 1]
 train_dt[, pure_premium := loss / earned_exposure]
 
+
 ### Run Data Processing Pipeline to Generate Transformed Data.table Objects
 ######################################################################################################
 # Run Pipeline Function
@@ -45,24 +46,42 @@ rm(train_test_dtable_list, train_dt, test_dt)
 
 ### Hyperparameter Tuning
 ######################################################################################################
-
 # Run Grid Search
 xgb_grid_results = xgb_early_stop_grid_search(train_matrix = train_dt_proc, valid_matrix = valid_dt_proc,
-                                              hyper_param_list = config_hparam_xgb_list,
-                                              n_models = 15, k = 5, nrounds = 5000, stopping_rounds = 20)
+                                              hyper_param_list = config_hparam_xgb_list, eval_metric = 'mae',
+                                              n_models = 25, k = 5, nrounds = 5000, stopping_rounds = 20)
 
-# Select Parameters
+# Extract Best Parameters, Save Results
+grid_summary = xgb_grid_results[[1]]
+best_params = xgb_grid_results[[2]]
+write.csv(grid_summary, config_save_name_xgb_grid, row.names = FALSE)
 
 
 ### Fit Final Model & Predict on Test Set
 ######################################################################################################
+# Fit Using Selected Hyperparameters
+fit_xgb = xgb.train(data = train_dt_proc,
+                    watchlist = list(train = train_dt_proc, validate = valid_dt_proc),
+                    eval_metric = 'mae',
+                    maximize = FALSE,
+                    nrounds = 5000,
+                    early_stopping_rounds = 20,
+                    stopping_metric = 'mae',
+                    colsample_bytree = best_params$colsample_bytree,
+                    learn_rate = best_params$learn_rate,
+                    gamma = best_params$gamma,
+                    max_depth = best_params$max_depth,
+                    min_child_weight = best_params$min_child_weight,
+                    reg_alpha = best_params$reg_alpha,
+                    reg_lambda = best_params$reg_lambda,
+                    subsample = best_params$subsample,
+                    verbose = TRUE)
 
-# Fit Using Selected Features & Hyperparameters
-
-# Read Test Set & Predict
+# Predict on Test Set
+test_pred = test_dt[, 'id'] %>% as.data.frame()
+test_pred$loss = as.data.frame(predict(fit_xgb, test_dt_proc))$predict
+write.csv(test_pred, config_save_name_xgb_test_pred, row.names = FALSE)
 
 # Save Model Object
-
-
-
+saveRDS(fit_xgb, config_save_name_xgb_model)
 
