@@ -41,7 +41,7 @@ train_test_dtable_list = xgb_train_valid_test_process(train_dtable = train_dt,
 train_dt_proc = train_test_dtable_list[[1]]
 valid_dt_proc = train_test_dtable_list[[2]]
 test_dt_proc = train_test_dtable_list[[3]]
-rm(train_test_dtable_list, train_dt, test_dt)
+rm(train_test_dtable_list, train_dt)
 
 
 ### Hyperparameter Tuning
