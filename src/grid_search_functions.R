@@ -513,12 +513,13 @@ plot_tweedie_glm_h2o_kfold_lofo = function(output_dframe, save_location = NULL){
 #' @param nrounds number of rounds to use xgboost fitting - defaults to 5000
 #' @param stopping_rounds number of rounds after which the validation
 #'  performance has stopped improving to stop training - defaults to 20
+#' @param print_every print progress every <x> iterations
 #' @param eval_metric metric used in xgboost evaluation and for early stopping - defaults to 'rmse'
 #' @param maximize_eval_metric boolean indicating whether loss function is maximizing or minimizing
 #' @param random_seed integer used in set.seed() call before sampling hyperparameter space
 #' @return data.frame object hyperparameters and average test set evaluation metric over k folds.
 xgb_early_stop_grid_search = function(train_matrix, valid_matrix, hyper_param_list, n_models,
-                                      k = 10, nrounds = 5000, stopping_rounds = 20,
+                                      k = 10, nrounds = 5000, stopping_rounds = 20, print_every = 10,
                                       eval_metric = 'rmse', maximize_eval_metric = FALSE, random_seed = 7072020){
   
   # Sample Hyperparameter Space
@@ -548,7 +549,7 @@ xgb_early_stop_grid_search = function(train_matrix, valid_matrix, hyper_param_li
                      reg_alpha = sample_grid_df[i, 'reg_alpha'],
                      reg_lambda = sample_grid_df[i, 'reg_lambda'],
                      subsample = sample_grid_df[i, 'subsample'],
-                     verbose = TRUE)
+                     print_every_n = print_every)
     
     sample_grid_df[i, paste0('test_set_', eval_metric)] = fit_xgb$evaluation_log[, paste0('test_', eval_metric, '_mean')] %>% min()
     rm(fit_xgb)
