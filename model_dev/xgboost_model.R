@@ -49,7 +49,7 @@ rm(train_test_dtable_list, train_dt, test_dt)
 # Run Grid Search
 xgb_grid_results = xgb_early_stop_grid_search(train_matrix = train_dt_proc, valid_matrix = valid_dt_proc,
                                               hyper_param_list = config_hparam_xgb_list,
-                                              n_models = 30, k = 10, nrounds = 5000, stopping_rounds = 20)
+                                              n_models = 15, k = 5, nrounds = 5000, stopping_rounds = 20)
 
 # Select Parameters
 

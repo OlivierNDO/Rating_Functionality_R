@@ -78,11 +78,11 @@ config_hparam_xgb_starter = list(colsample_bytree = 0.6,
 
 # Hyperparameter Search Space
 config_hparam_xgb_list = list(colsample_bytree = seq(0.4, 0.8, 0.05),
-                              learn_rate = seq(0.005, 0.08, 0.005),
+                              learn_rate = seq(0.005, 0.04, 0.005),
                               gamma = seq(0, 5, 0.25),
                               max_depth = seq(4, 12, 1),
                               min_child_weight = seq(0, 20, 5),
-                              reg_alpha = c(0, 0.00001, 0.0001, 0.001, 0.01),
+                              reg_alpha = c(0, 0.00001, 0.001, 0.01),
                               reg_lambda = c(0.5, 0.75, 1.0),
                               subsample = seq(0.4, 0.9, 0.1))
 
