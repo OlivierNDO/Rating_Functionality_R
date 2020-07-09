@@ -36,10 +36,14 @@ config_save_name_recommended_features = 'feature_importance/feature_importance_o
 config_save_name_alpha_lambda_grid = 'feature_importance/feature_importance_output/alpha_lambda_grid_search.csv'
 config_save_name_tweedie_grid = 'feature_importance/feature_importance_output/tweedie_grid_search.csv'
 config_save_name_xgb_grid = 'feature_importance/feature_importance_output/xgb_grid_search.csv'
+config_save_name_ens_grid = 'feature_importance/feature_importance_output/ens_grid_search.csv'
 config_save_name_glm_test_pred = paste0(config_fp_proc_data_dir, 'glm_prediction_output.csv')
 config_save_name_xgb_test_pred = paste0(config_fp_proc_data_dir, 'xgb_prediction_output.csv')
+config_save_name_ens_test_pred = paste0(config_fp_proc_data_dir, 'ens_prediction_output.csv')
 config_save_name_glm_model = 'D:/model_save/glm/'
 config_save_name_xgb_model = 'D:/model_save/xgb/xgb_model.rds'
+config_save_name_ens_model = 'D:/model_save/xgb/ens_model.rds'
+
 
 ### GLM Hyperparameters to Tune (config_hparam...)
 ######################################################################################################
@@ -88,4 +92,16 @@ config_hparam_xgb_list = list(colsample_bytree = seq(0.4, 0.8, 0.05),
                               reg_alpha = c(0, 0.00001, 0.001, 0.01),
                               reg_lambda = c(0.5, 0.75, 1.0),
                               subsample = seq(0.4, 0.9, 0.1))
+
+
+# Ensemble Hyperparameter Search Space
+config_hparam_ens_list = list(colsample_bytree = 1,
+                              learn_rate = seq(0.005, 0.08, 0.005),
+                              gamma = 0,
+                              max_depth = seq(3, 8, 1),
+                              min_child_weight = seq(0, 50, 10),
+                              reg_alpha = 0,
+                              reg_lambda = 0,
+                              subsample = seq(0.4, 0.9, 0.1))
+
 

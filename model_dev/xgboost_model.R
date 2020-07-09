@@ -44,7 +44,7 @@ test_dt_proc = train_test_dtable_list[[3]]
 rm(train_test_dtable_list, train_dt)
 
 
-### Hyperparameter Tuning
+### Broad Hyperparameter Tuning
 ######################################################################################################
 # Run Grid Search
 xgb_grid_results = xgb_early_stop_grid_search(train_matrix = train_dt_proc, valid_matrix = valid_dt_proc,
